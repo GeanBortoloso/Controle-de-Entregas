@@ -3,7 +3,7 @@ import DeliveryCard from '../components/DeliveryCard';
 import FilterDropdown from '../components/FilterDropdown';
 import { ArchiveIcon, PlusIcon } from '../assets/icons';
 
-function DeliveryList({ deliveries, onAdd, onUpdateStatus, onDelete, requestConfirmation, onShowArchive, filterDate, setFilterDate, statusFilters, setStatusFilters, clientNameFilter, setClientNameFilter }) {
+function DeliveryList({ deliveries, onAdd, onUpdateStatus, onDelete, requestConfirmation, onShowArchive, filterDate, setFilterDate, statusFilters, setStatusFilters, clientNameFilter, setClientNameFilter, onViewDetails }) {
     const filteredDeliveries = useMemo(() => {
         return deliveries.filter(d => {
             const isDateMatch = !filterDate || d.createdAt.split('T')[0] === filterDate;
@@ -50,6 +50,7 @@ function DeliveryList({ deliveries, onAdd, onUpdateStatus, onDelete, requestConf
                         onUpdateStatus={onUpdateStatus} 
                         onDelete={onDelete} 
                         requestConfirmation={requestConfirmation}
+                        onViewDetails={onViewDetails}
                     />
                 )) : (
                     <div className="empty-state">

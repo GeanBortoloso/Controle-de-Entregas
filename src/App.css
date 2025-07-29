@@ -496,3 +496,13 @@ h3 {
 .export-button {
     color: var(--color-text);
 }
+
+.observation-full {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+.list-header {
+    position: relative;
+}

@@ -5,7 +5,10 @@ function AddClientForm({ onSave, onBack, routeNumber, totalRoutes }) {
     const [clientName, setClientName] = useState('');
     const [itemTypes, setItemTypes] = useState({ pecas: false, baterias: false, teste: false });
     const [itemQuantity, setItemQuantity] = useState(1);
+    const [observation, setObservation] = useState('');
     const [isSaving, setIsSaving] = useState(false);
+
+    const MAX_OBSERVATION_LENGTH = 200;
 
     const handleItemTypeToggle = (itemName) => {
         setItemTypes(prev => ({ ...prev, [itemName]: !prev[itemName] }));
@@ -21,11 +24,17 @@ function AddClientForm({ onSave, onBack, routeNumber, totalRoutes }) {
         if (clientName && selectedItems && itemQuantity > 0) {
             setIsSaving(true);
             setTimeout(() => {
-                onSave({ clientName, itemType: selectedItems, itemQuantity: parseInt(itemQuantity) });
+                onSave({ 
+                    clientName, 
+                    itemType: selectedItems, 
+                    itemQuantity: parseInt(itemQuantity),
+                    observation: observation
+                });
                 if (routeNumber < totalRoutes) {
                     setClientName('');
                     setItemTypes({ pecas: false, baterias: false });
                     setItemQuantity(1);
+                    setObservation('');
                 }
                 setIsSaving(false);
             }, 300);
@@ -60,6 +69,17 @@ function AddClientForm({ onSave, onBack, routeNumber, totalRoutes }) {
                 <div className="form-group">
                     <label htmlFor="itemQuantity">Quantidade</label>
                     <input type="number" id="itemQuantity" value={itemQuantity} onChange={e => setItemQuantity(e.target.value)} min="1" required />
+                </div>
+                <div className="form-group">
+                    <label htmlFor="observation">Observação ({observation.length}/{MAX_OBSERVATION_LENGTH} caracteres)</label>
+                    <textarea 
+                        id="observation" 
+                        value={observation} 
+                        onChange={e => setObservation(e.target.value)} 
+                        maxLength={MAX_OBSERVATION_LENGTH} 
+                        rows="3"
+                        placeholder="Ex: Pedido urgente, ligar para o cliente antes de entregar, etc."
+                    ></textarea>
                 </div>
                 <div className="form-actions">
                     <button type="button" onClick={onBack} className="btn-secondary">Cancelar Leva</button>

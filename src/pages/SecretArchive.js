@@ -1,9 +1,8 @@
 import React, { useMemo } from 'react';
-import { ArrowLeftIcon, ExportIcon, ChartBarIcon, TrashIcon } from '../assets/icons'; // Adicionado TrashIcon
+import { ArrowLeftIcon, ExportIcon, ChartBarIcon, TrashIcon } from '../assets/icons';
 import FilterDropdown from '../components/FilterDropdown';
-import { TruckIcon, UserIcon } from '../assets/icons';
 
-function SecretArchive({ archive, onBack, filterDate, setFilterDate, statusFilters, setStatusFilters, clientNameFilter, setClientNameFilter, onShowReports, onDeleteFromArchive, requestConfirmation }) { // Adicionado onDeleteFromArchive e requestConfirmation
+function SecretArchive({ archive, onBack, filterDate, setFilterDate, statusFilters, setStatusFilters, clientNameFilter, setClientNameFilter, onShowReports, onDeleteFromArchive, requestConfirmation, onViewDetails }) {
     const filteredArchive = useMemo(() => {
         return archive.filter(d => {
             const isDateMatch = !filterDate || d.createdAt.split('T')[0] === filterDate;
@@ -21,7 +20,7 @@ function SecretArchive({ archive, onBack, filterDate, setFilterDate, statusFilte
 
         const headers = [
             "Cliente", "Status", "Entregador", "Veículo", "Item", "Quantidade", 
-            "Data de Criação", "Início da Rota", "Fim da Rota", "Tempo Total de Rota"
+            "Data de Criação", "Início da Rota", "Fim da Rota", "Tempo Total de Rota", "Observação"
         ];
 
         const escapeCSV = (value) => `"${String(value).replace(/"/g, '""')}"`;
@@ -39,7 +38,8 @@ function SecretArchive({ archive, onBack, filterDate, setFilterDate, statusFilte
                     escapeCSV(new Date(row.createdAt).toLocaleString('pt-BR')),
                     escapeCSV(row.startTime ? new Date(row.startTime).toLocaleString('pt-BR') : 'N/A'),
                     escapeCSV(row.endTime ? new Date(row.endTime).toLocaleString('pt-BR') : 'N/A'),
-                    escapeCSV(row.totalTime || 'N/A')
+                    escapeCSV(row.totalTime || 'N/A'),
+                    escapeCSV(row.observation || '')
                 ];
                 return values.join(';');
             })
@@ -57,12 +57,11 @@ function SecretArchive({ archive, onBack, filterDate, setFilterDate, statusFilte
         document.body.removeChild(link);
     };
 
-    // Função para lidar com a exclusão de um item
     const handleDeleteClick = (id) => {
         requestConfirmation(
             "Tem certeza que deseja apagar esta entrega do arquivo? Esta ação é irreversível.",
             () => onDeleteFromArchive(id),
-            'danger' // Tipo de confirmação para estilização (vermelho)
+            'danger'
         );
     };
 
@@ -92,28 +91,22 @@ function SecretArchive({ archive, onBack, filterDate, setFilterDate, statusFilte
             </div>
             <div className="deliveries-list">
                 {filteredArchive.length > 0 ? filteredArchive.map(d => (
-                    <div key={d.id} className={`delivery-card status-${d.status.toLowerCase()}`}>
+                     <div key={d.id} className={`delivery-card ${d.status.toLowerCase()}`} onClick={() => onViewDetails(d, true)}>
                         <div className="card-content">
                             <div className="card-info">
                                 <p className="client-name">{d.clientName}</p>
                                 <p className="item-info">Item: {d.itemType} (Qtd: {d.itemQuantity})</p>
-                                <div className="driver-info">
-                                    <span><UserIcon /> {d.driver}</span>
-                                    <span><TruckIcon /> {d.vehicle}</span>
-                                </div>
-                                <div className="item-info" style={{marginTop: '1rem', fontSize: '0.8rem'}}>
-                                    <p><strong>Criado em:</strong> {new Date(d.createdAt).toLocaleString()}</p>
-                                    <p><strong>Início da Rota:</strong> {d.startTime ? new Date(d.startTime).toLocaleString() : 'N/A'}</p>
-                                    <p><strong>Fim da Rota:</strong> {d.endTime ? new Date(d.endTime).toLocaleString() : 'N/A'}</p>
-                                    <p><strong>Tempo Total de Rota:</strong> {d.totalTime || 'N/A'}</p>
-                                </div>
+                                <p><strong>Entregador:</strong> {d.driver}</p>
+                                <p><strong>Veículo:</strong> {d.vehicle}</p>
+                                {d.observation && (
+                                    <p className="observation-snippet">Obs: {`${d.observation.substring(0, 50)}${d.observation.length > 50 ? '...' : ''}`}</p>
+                                )}
                             </div>
                             <div className="card-actions">
                                 <span className={`status-badge status-${d.status.toLowerCase()}`}>{d.status}</span>
-                                {/* Botão de exclusão adicionado aqui */}
                                 <button 
-                                    onClick={() => handleDeleteClick(d.id)} 
-                                    className="icon-button btn-danger" // Usando btn-danger para estilização
+                                    onClick={(e) => { e.stopPropagation(); handleDeleteClick(d.id); }}
+                                    className="icon-button btn-danger"
                                     title="Apagar do Arquivo"
                                     style={{ marginLeft: '10px' }}
                                 >

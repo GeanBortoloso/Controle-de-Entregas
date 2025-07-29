@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import './App.css'; // Estilos globais
+import './App.css';
 import Header from './components/Header';
 import DeliveryList from './pages/DeliveryList';
 import AddDeliveryForm from './pages/AddDeliveryForm';
@@ -7,10 +7,11 @@ import AddClientForm from './pages/AddClientForm';
 import SecretArchive from './pages/SecretArchive';
 import ConfirmationModal from './components/ConfirmationModal';
 import PasswordModal from './components/PasswordModal';
-import Reports from './Reports'; // Importação do componente Reports
+import Reports from './Reports';
+import DeliveryDetail from './pages/DeliveryDetail';
 
-import { generateUniqueId } from './utils/helpers'; // Importe a função auxiliar
-import { PASSWORD } from './utils/constants'; // Importe a senha
+import { generateUniqueId } from './utils/helpers';
+import { PASSWORD } from './utils/constants';
 
 // Importação TEMPORÁRIA do deliveryService (ainda sem integração real com API)
 import deliveryService from './services/deliveryService';
@@ -44,7 +45,10 @@ export default function App() {
     const [passwordModalOpen, setPasswordModalOpen] = useState(false);
     const [passwordInput, setPasswordInput] = useState('');
     const [showArchive, setShowArchive] = useState(false);
-    const [showReports, setShowReports] = useState(false); // Novo estado para a visualização de relatórios
+    const [showReports, setShowReports] = useState(false);
+    const [selectedDelivery, setSelectedDelivery] = useState(null);
+    const [isViewingFromArchive, setIsViewingFromArchive] = useState(false);
+
     const [filterDate, setFilterDate] = useState('');
     const [clientNameFilter, setClientNameFilter] = useState('');
     const [statusFilters, setStatusFilters] = useState({
@@ -66,7 +70,7 @@ export default function App() {
         id: generateUniqueId(),
         ...newDeliveryInfo,
         ...clientData,
-        clientName: clientData.clientName.toUpperCase(), // Converte o nome do cliente para maiúsculas aqui
+        clientName: clientData.clientName.toUpperCase(),
         createdAt: new Date().toISOString(),
         status: newDeliveryInfo.status,
         startTime: newDeliveryInfo.status === 'Em Rota' ? new Date().toISOString() : null,
@@ -120,36 +124,51 @@ export default function App() {
     };
 
     const handleDelete = (id) => {
-
         setDeliveries(prev => prev.filter(d => d.id !== id));
     };
 
-    // NOVA FUNÇÃO: Lidar com a exclusão do arquivo secreto
     const handleDeleteFromArchive = (id) => {
         setArchive(prev => prev.filter(d => d.id !== id));
-        // O useEffect para 'archive' já cuidará de atualizar o localStorage
     };
 
     const goBack = () => {
         setView('list');
         setShowArchive(false);
-        setShowReports(false); // Redefine o estado de visualização de relatórios
+        setShowReports(false);
         setNewDeliveryInfo(null);
         setTotalRoutes(0);
         setCurrentRouteNumber(1);
+        setSelectedDelivery(null);
+        setIsViewingFromArchive(false);
     };
 
     const handleShowArchive = () => {
         setPasswordModalOpen(true);
     };
 
-    const handleShowReports = () => { // Novo manipulador para mostrar relatórios
+    const handleShowReports = () => {
         setShowReports(true);
-        setView('reports'); // Define a visualização como 'reports'
+        setView('reports');
     };
     
+    const handleViewDetails = (delivery, fromArchive = false) => {
+        setSelectedDelivery(delivery);
+        setIsViewingFromArchive(fromArchive);
+        setView('detail');
+    };
+
+    const handleCloseDetails = () => {
+        setSelectedDelivery(null);
+        if (isViewingFromArchive) {
+            setView('archive');
+        } else {
+            setView('list');
+        }
+        setIsViewingFromArchive(false);
+    };
+
     const handlePasswordSubmit = () => {
-        if (passwordInput === PASSWORD) { // Usando a constante importada
+        if (passwordInput === PASSWORD) {
             setPasswordModalOpen(false);
             setPasswordInput('');
             setShowArchive(true);
@@ -176,12 +195,15 @@ export default function App() {
     };
 
     const renderView = () => {
-        if (showReports) { // Condição para renderizar o componente Reports
+        if (selectedDelivery) {
+            return <DeliveryDetail delivery={selectedDelivery} onBack={handleCloseDetails} isFromArchive={isViewingFromArchive} />;
+        }
+        if (showReports) {
             return <Reports archive={archive} onBack={goBack} />;
         }
         if (showArchive) {
-            // Passa a nova função handleDeleteFromArchive para SecretArchive
-            return <SecretArchive archive={archive} onBack={goBack} filterDate={filterDate} setFilterDate={setFilterDate} statusFilters={statusFilters} setStatusFilters={setStatusFilters} clientNameFilter={clientNameFilter} setClientNameFilter={setClientNameFilter} onShowReports={handleShowReports} onDeleteFromArchive={handleDeleteFromArchive} requestConfirmation={requestConfirmation} />;
+
+            return <SecretArchive archive={archive} onBack={goBack} filterDate={filterDate} setFilterDate={setFilterDate} statusFilters={statusFilters} setStatusFilters={setStatusFilters} clientNameFilter={clientNameFilter} setClientNameFilter={setClientNameFilter} onShowReports={handleShowReports} onDeleteFromArchive={handleDeleteFromArchive} requestConfirmation={requestConfirmation} onViewDetails={handleViewDetails} />;
         }
         switch (view) {
             case 'addDelivery':
@@ -189,7 +211,7 @@ export default function App() {
             case 'addClient':
                 return <AddClientForm onSave={handleSaveClientRoute} onBack={goBack} routeNumber={currentRouteNumber} totalRoutes={totalRoutes} />;
             default:
-                return <DeliveryList deliveries={deliveries} onAdd={() => setView('addDelivery')} onUpdateStatus={handleUpdateStatus} onDelete={handleDelete} requestConfirmation={requestConfirmation} onShowArchive={handleShowArchive} filterDate={filterDate} setFilterDate={setFilterDate} statusFilters={statusFilters} setStatusFilters={setStatusFilters} clientNameFilter={clientNameFilter} setClientNameFilter={setClientNameFilter} />;
+                return <DeliveryList deliveries={deliveries} onAdd={() => setView('addDelivery')} onUpdateStatus={handleUpdateStatus} onDelete={handleDelete} requestConfirmation={requestConfirmation} onShowArchive={handleShowArchive} filterDate={filterDate} setFilterDate={setFilterDate} statusFilters={statusFilters} setStatusFilters={setStatusFilters} clientNameFilter={clientNameFilter} setClientNameFilter={setClientNameFilter} onViewDetails={handleViewDetails} />;
         }
     };
 
